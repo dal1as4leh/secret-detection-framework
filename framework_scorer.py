@@ -115,12 +115,22 @@ for _, row in df.iterrows():
 
 # Remediation
 print(f"\n[Remediation Layer] Processing BLOCK decisions...")
+block_found = False
 for _, row in df[df['Decision']=='BLOCK'].iterrows():
+    block_found = True
     print(f"  >> {row['Secret_Type']} in {row['File']}")
     print(f"     Step 1: Revocation  — TRIGGERED")
     print(f"     Step 2: Rotation    — TRIGGERED")
     print(f"     Step 3: Restriction — TRIGGERED")
     print(f"     Step 4: Notification — SENT")
+
+if block_found:
+    print("\n" + "="*60)
+    print("  PIPELINE BLOCKED")
+    print("  High-risk secret detected!")
+    print("  Remove the secret and try again.")
+    print("="*60)
+    exit(1)
 
 # Save results
 df.to_csv('scoring_results.csv', index=False)
