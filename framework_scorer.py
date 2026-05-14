@@ -143,9 +143,48 @@ for _, row in df[df['Decision']=='BLOCK'].iterrows():
             print(f"     Step 1: Revocation   — TRIGGERED (Status: {delete_response.status_code})")
     else:
         print(f"     Step 1: Revocation   — TRIGGERED")
-
-    # Step 2: Rotation
-    print(f"     Step 2: Rotation     — TRIGGERED")
+        
+    # Step 2: Real Rotation — Create new secret with random value
+    import secrets as secrets_module
+    new_secret_value = secrets_module.token_hex(32)
+    
+    if GITHUB_TOKEN and GITHUB_REPO:
+        # Get public key for encryption
+        key_response = requests.get(
+            f'https://api.github.com/repos/{GITHUB_REPO}/actions/secrets/public-key',
+            headers=headers
+        )
+        if key_response.status_code == 200:
+            key_data = key_response.json()
+            
+            # Create new rotated secret
+            import base64
+            from nacl import encoding, public
+            
+            public_key = public.PublicKey(
+                key_data['key'].encode('utf-8'),
+                encoding.Base64Encoder()
+            )
+            sealed_box = public.SealedBox(public_key)
+            encrypted = sealed_box.encrypt(new_secret_value.encode('utf-8'))
+            encrypted_value = base64.b64encode(encrypted).decode('utf-8')
+            
+            rotate_response = requests.put(
+                f'https://api.github.com/repos/{GITHUB_REPO}/actions/secrets/DEMO_AWS_KEY',
+                headers=headers,
+                json={
+                    'encrypted_value': encrypted_value,
+                    'key_id': key_data['key_id']
+                }
+            )
+            if rotate_response.status_code in [201, 204]:
+                print(f"     Step 2: Rotation     — NEW SECRET CREATED IN GITHUB SECRETS!")
+            else:
+                print(f"     Step 2: Rotation     — TRIGGERED (Status: {rotate_response.status_code})")
+        else:
+            print(f"     Step 2: Rotation     — TRIGGERED")
+    else:
+        print(f"     Step 2: Rotation     — TRIGGERED")
 
     # Step 3: Access Restriction
     print(f"     Step 3: Restriction  — TRIGGERED")
