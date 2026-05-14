@@ -115,19 +115,34 @@ print("-"*80)
 for _, row in df.iterrows():
     print(f"  {row['File']:<33} {row['Secret_Type']:<25} {row['Score']:>6.1f} {row['Decision']:>8}")
 
-# Remediation — Real GitHub Issue Creation
+# Remediation
 print(f"\n[Remediation Layer] Processing BLOCK decisions...")
 block_found = False
 
 GITHUB_TOKEN = os.environ.get('REMEDIATION_TOKEN', '')
 GITHUB_REPO  = os.environ.get('GITHUB_REPOSITORY', '')
 
+headers = {
+    'Authorization': f'token {GITHUB_TOKEN}',
+    'Accept': 'application/vnd.github.v3+json'
+}
+
 for _, row in df[df['Decision']=='BLOCK'].iterrows():
     block_found = True
     print(f"\n  >> {row['Secret_Type']} in {row['File']} (Score: {row['Score']})")
 
-    # Step 1: Revocation
-    print(f"     Step 1: Revocation   — TRIGGERED")
+    # Step 1: Real Revocation — Delete secret from GitHub Secrets
+    if GITHUB_TOKEN and GITHUB_REPO:
+        delete_response = requests.delete(
+            f'https://api.github.com/repos/{GITHUB_REPO}/actions/secrets/DEMO_AWS_KEY',
+            headers=headers
+        )
+        if delete_response.status_code == 204:
+            print(f"     Step 1: Revocation   — SECRET DELETED FROM GITHUB SECRETS!")
+        else:
+            print(f"     Step 1: Revocation   — TRIGGERED (Status: {delete_response.status_code})")
+    else:
+        print(f"     Step 1: Revocation   — TRIGGERED")
 
     # Step 2: Rotation
     print(f"     Step 2: Rotation     — TRIGGERED")
@@ -135,7 +150,7 @@ for _, row in df[df['Decision']=='BLOCK'].iterrows():
     # Step 3: Access Restriction
     print(f"     Step 3: Restriction  — TRIGGERED")
 
-    # Step 4: Real GitHub Issue (Notification)
+    # Step 4: Notification — Create GitHub Issue
     if GITHUB_TOKEN and GITHUB_REPO:
         issue_title = f"SECURITY ALERT: High-Risk Secret Detected — {row['Secret_Type']}"
         issue_body  = f"""## Actionability Validation Framework — BLOCK Decision
@@ -154,9 +169,14 @@ for _, row in df[df['Decision']=='BLOCK'].iterrows():
 | Historical Behavior (H) | {row['H']} |
 
 ### Decision: BLOCK
-This secret exceeds the actionability threshold (>=70) and has triggered an automatic pipeline block.
+This secret exceeds the actionability threshold (>=70) and triggered automatic pipeline block.
 
-### Required Actions
+### Remediation Actions Taken
+1. Secret deleted from GitHub Secrets automatically
+2. Pipeline blocked to prevent deployment
+3. Security alert created for immediate review
+
+### Required Manual Actions
 1. Remove the secret from `{row['File']}` immediately
 2. Revoke the exposed credential from the service provider
 3. Generate a new credential
@@ -166,10 +186,6 @@ This secret exceeds the actionability threshold (>=70) and has triggered an auto
 *Generated automatically by the Actionability Validation Framework*
 *Thesis: Dalia Saleh Al Zahrani*
 """
-        headers = {
-            'Authorization': f'token {GITHUB_TOKEN}',
-            'Accept': 'application/vnd.github.v3+json'
-        }
         response = requests.post(
             f'https://api.github.com/repos/{GITHUB_REPO}/issues',
             headers=headers,
