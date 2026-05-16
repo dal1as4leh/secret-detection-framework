@@ -1,6 +1,14 @@
 repos:
   - repo: local
     hooks:
+      - id: detect-secrets-scan
+        name: Detect Secrets (Detection Layer)
+        entry: detect-secrets scan --no-verify --exclude-files 'framework_scorer.py' --exclude-files '.github/workflows/secret_detection.yml' --exclude-files '.pre-commit-config.yaml'
+        language: python
+        always_run: true
+        pass_filenames: false
+        additional_dependencies: [detect-secrets]
+
       - id: actionability-framework
         name: Actionability Validation Framework
         entry: python framework_scorer.py
