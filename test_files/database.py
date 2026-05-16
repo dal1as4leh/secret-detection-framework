@@ -25,3 +25,13 @@ def get_db_connection():
     # Should use environment variables instead
     password = os.environ.get("DB_PASSWORD")
     return password
+# ══════════════════════════════════════════════════════
+# Live Validation Test Cases
+# ══════════════════════════════════════════════════════
+
+# Test Case 1: FAKE GitHub Token — should be REJECTED by GitHub API
+# Format is correct but token does not exist
+FAKE_GITHUB_TOKEN = "ghp_FakeTokenThatWillBeRejected123456789"
+
+# Test Case 2: Another FAKE token — expired format
+EXPIRED_GITHUB_TOKEN = "ghp_ExpiredToken000000000000000000000000"
