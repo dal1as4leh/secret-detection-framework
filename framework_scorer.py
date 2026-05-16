@@ -253,7 +253,7 @@ headers = {
 for _, row in df[df['Decision']=='BLOCK'].iterrows():
     block_found = True
     print(f"\n  >> {row['Secret_Type']} in {row['File']} (Score: {row['Score']})")
-    print(f"     Validation: {row['Validation_Method']} → {row['Validation_Result']}")
+    print(f"     Validation: {row['Validation_Method']} -> {row['Validation_Result']}")
 
     # Step 1: Revocation
     if GITHUB_TOKEN and GITHUB_REPO:
