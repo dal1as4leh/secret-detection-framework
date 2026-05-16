@@ -139,7 +139,16 @@ if not secrets_list:
     print("[Demo Mode] Using sample secrets")
 
 print(f"[Detection Layer] Secrets found: {len(secrets_list)}")
-
+# Add real token for Live Validation comparison
+real_token = os.environ.get('TEST_REAL_TOKEN', '')
+if real_token:
+    secrets_list.append({
+        'file': 'ci_environment',
+        'type': 'GitHub Token',
+        'line': 0,
+        'value': real_token
+    })
+    print(f"[Live Validation] Added real token for comparison testing")
 # ══════════════════════════════════════════════════════════
 # SCORING FACTORS
 # ══════════════════════════════════════════════════════════
